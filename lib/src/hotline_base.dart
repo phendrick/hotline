@@ -6,22 +6,25 @@ import 'package:web_socket_channel/io.dart';
 
 import 'hotline_subscription_manager.dart';
 
+/// The possible states for a HotlineConnectionState
 enum HotlineSocketConnectionType {
   initial, connecting, connected, disconnected
 }
 
+/// State manager for a Hotline connection
 class HotlineSocketConnectionState {
   Function onConnect;
   Function onDisconnect;
 
+  /// Vars for periodically check the status of the connection
   late Timer _timer;
   late DateTime? _lastPing;
   HotlineSocketConnectionType state = HotlineSocketConnectionType.initial;
 
   HotlineSocketConnectionState({required this.onConnect, required this.onDisconnect});
 
-  // setter to change our state and trigger additional effects such as our
-  // onConnect callback, or cancelling the health-check timer
+  /// setter to change our state and trigger additional effects such as our
+  /// onConnect callback, or cancelling the health-check timer
   set stateType(HotlineSocketConnectionType type) {
     state = type;
 
@@ -40,6 +43,7 @@ class HotlineSocketConnectionState {
     }
   }
 
+  /// Set the latest ping time from the socket
   set lastPing(DateTime ping) => _lastPing = ping;
 
   // periodically check the ping times to ensure we're still connected
@@ -56,9 +60,9 @@ class HotlineSocketConnectionState {
   }
 }
 
-// Hotline - an ActionCable-like API to subscribe to ActionCable channels
+/// Hotline - an ActionCable-like API to subscribe to ActionCable channels
 class Hotline {
-  // healthcheck manager
+  /// health-check manager
   late final HotlineSocketConnectionState connectionState;
 
   String url;
