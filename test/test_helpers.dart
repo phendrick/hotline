@@ -6,30 +6,33 @@ import 'package:hotline/hotline.dart';
 import 'package:hotline/src/hotline_subscription_manager.dart';
 import 'package:web_socket_channel/io.dart';
 
-
 class MockHotline extends Mock implements Hotline {
   @override
   late final HotlineSocketConnectionState connectionState;
 
   late HotlineSubscriptionManager subscriptions;
-  IOWebSocketChannel socketChannel = IOWebSocketChannel.connect('ws://localhost');
+  IOWebSocketChannel socketChannel =
+      IOWebSocketChannel.connect('ws://localhost');
 
   Function onConnect;
   Function onDisconnect;
 
   MockHotline({required this.onConnect, required this.onDisconnect}) {
     subscriptions = HotlineSubscriptionManager(this);
-    connectionState = HotlineSocketConnectionState(onConnect: onConnect, onDisconnect: onDisconnect);
+    connectionState = HotlineSocketConnectionState(
+        onConnect: onConnect, onDisconnect: onDisconnect);
     connectionState.stateType = HotlineSocketConnectionType.connecting;
   }
 
   void dispatch(Map payload) {
-    if(payload['type'] == null) {
-      subscriptions.getAllSubscriptions(jsonEncode(payload['identifier'])).forEach((subscription) {
+    if (payload['type'] == null) {
+      subscriptions
+          .getAllSubscriptions(jsonEncode(payload['identifier']))
+          .forEach((subscription) {
         subscription.handleResponse(payload);
       });
-    }else {
-      switch(payload['type']) {
+    } else {
+      switch (payload['type']) {
         case "welcome":
           this._onConnect();
           break;
@@ -41,7 +44,7 @@ class MockHotline extends Mock implements Hotline {
           break;
         case "reject_subscription":
           final callback = this.onConnectionRefused;
-          if(callback != null) {
+          if (callback != null) {
             callback();
           }
           break;

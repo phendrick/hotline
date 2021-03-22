@@ -13,10 +13,18 @@ class HotlineSubscriptionManager {
   ///
   /// If using stream_for, with resource specific channels use `{'channel': 'ChannelName', 'param': 1}`
   /// alternatively if you're broadcasting via ActionCable.server.broadcast('ChannelName', {payload: ...}) and `stream_from 'ChannelName'` [channel] should be a string
-  HotlineSubscription create(dynamic channel, {required Function onReceived, required Function onConfirmed, Function? onUnsubscribed, Function? onRejected}) {
+  HotlineSubscription create(dynamic channel,
+      {required Function onReceived,
+      required Function onConfirmed,
+      Function? onUnsubscribed,
+      Function? onRejected}) {
     final identifier = _getChannelIdentifier(channel);
 
-    final subscription = HotlineSubscription(identifier, this, onReceived: onReceived, onConfirmed: onConfirmed, onRejected: onRejected, onUnsubscribed: onUnsubscribed);
+    final subscription = HotlineSubscription(identifier, this,
+        onReceived: onReceived,
+        onConfirmed: onConfirmed,
+        onRejected: onRejected,
+        onUnsubscribed: onUnsubscribed);
     _subscriptions.add(subscription);
 
     return subscription;
@@ -32,13 +40,13 @@ class HotlineSubscriptionManager {
   List<HotlineSubscription> get subscriptions => _subscriptions;
 
   /// allow for `hotline.consumer.subscriptions[0]`
-  HotlineSubscription operator [](int i ) => _subscriptions[i];
+  HotlineSubscription operator [](int i) => _subscriptions[i];
 
   /// turn the channel identifier into an encoded string that ActionCable is expecting
   String _getChannelIdentifier(dynamic identifier) {
     if (identifier is Map<String, dynamic>) {
       return jsonEncode(identifier);
-    }else {
+    } else {
       return jsonEncode({'channel': identifier});
     }
   }
@@ -46,8 +54,9 @@ class HotlineSubscriptionManager {
   /// Find a subscription from the collection by looking up its identifier
   HotlineSubscription? getSubscription(String identifier) {
     try {
-      return subscriptions.firstWhere((subscription) => subscription.identifier == identifier);
-    } catch(e) {
+      return subscriptions
+          .firstWhere((subscription) => subscription.identifier == identifier);
+    } catch (e) {
       return null;
     }
   }
@@ -56,12 +65,16 @@ class HotlineSubscriptionManager {
   ///
   /// allows for subscribing to a channel multiple times
   List<HotlineSubscription> getAllSubscriptions(String identifier) {
-    return subscriptions.where((subscription) => subscription.identifier == identifier).toList();
+    return subscriptions
+        .where((subscription) => subscription.identifier == identifier)
+        .toList();
   }
 
   /// called when our `confirmed` callback is triggered by a 'confirm_subscription' event
   void confirmSubscription(String identifier) {
-    subscriptions.where((subscription) => subscription.identifier == identifier).forEach((subscription) {
+    subscriptions
+        .where((subscription) => subscription.identifier == identifier)
+        .forEach((subscription) {
       subscription.confirmed();
     });
   }

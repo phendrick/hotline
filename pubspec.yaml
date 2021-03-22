@@ -1,7 +1,7 @@
 name: hotline
 description: >-
   ActionCable client-like API in dart, for Dart and Flutter applications.
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/phendrick/hotline
 documentation: https://github.com/phendrick/hotline
 

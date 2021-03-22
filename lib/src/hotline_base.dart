@@ -8,7 +8,10 @@ import 'hotline_subscription_manager.dart';
 
 /// The possible states for a HotlineConnectionState
 enum HotlineSocketConnectionType {
-  initial, connecting, connected, disconnected
+  initial,
+  connecting,
+  connected,
+  disconnected
 }
 
 /// State manager for a Hotline connection
@@ -21,14 +24,15 @@ class HotlineSocketConnectionState {
   late DateTime? _lastPing;
   HotlineSocketConnectionType state = HotlineSocketConnectionType.initial;
 
-  HotlineSocketConnectionState({required this.onConnect, required this.onDisconnect});
+  HotlineSocketConnectionState(
+      {required this.onConnect, required this.onDisconnect});
 
   /// setter to change our state and trigger additional effects such as our
   /// onConnect callback, or cancelling the health-check timer
   set stateType(HotlineSocketConnectionType type) {
     state = type;
 
-    switch(state) {
+    switch (state) {
       case HotlineSocketConnectionType.initial:
         break;
       case HotlineSocketConnectionType.connecting:
@@ -52,9 +56,9 @@ class HotlineSocketConnectionState {
   }
 
   void _connectionHealthCheck(_) {
-    if(_lastPing == null) return;
+    if (_lastPing == null) return;
 
-    if(DateTime.now().difference(_lastPing!) > Duration(seconds: 5)) {
+    if (DateTime.now().difference(_lastPing!) > Duration(seconds: 5)) {
       onDisconnect();
     }
   }
@@ -82,22 +86,29 @@ class Hotline {
   // the wrapped socket channel
   late final IOWebSocketChannel socketChannel;
 
-  Hotline(this.url, {required this.onConnect, required this.onDisconnect, this.headers, this.protocols, this.pingInterval, this.onConnectionRefused}) {
-    socketChannel   = IOWebSocketChannel.connect(url);
-    connectionState = HotlineSocketConnectionState(onConnect: _onConnect, onDisconnect: _onDisconnect);
+  Hotline(this.url,
+      {required this.onConnect,
+      required this.onDisconnect,
+      this.headers,
+      this.protocols,
+      this.pingInterval,
+      this.onConnectionRefused}) {
+    socketChannel = IOWebSocketChannel.connect(url);
+    connectionState = HotlineSocketConnectionState(
+        onConnect: _onConnect, onDisconnect: _onDisconnect);
     connectionState.stateType = HotlineSocketConnectionType.connecting;
 
     stream = socketChannel.stream.listen((data) {
       final payload = jsonDecode(data);
 
-      if(payload['type'] != null) {
+      if (payload['type'] != null) {
         // if the payload has a type attribute we can assume it's a protocol message
         _dispatchProtocolMessage(payload);
-      }else {
+      } else {
         // handle the broadcast....
         _dispatchDataMessage(payload);
       }
-    }, onError: (_)  {
+    }, onError: (_) {
       _onDisconnect();
     });
 
@@ -118,7 +129,7 @@ class Hotline {
 
   // connection response dispatcher.
   void _dispatchProtocolMessage(Map payload) {
-    switch(payload['type']) {
+    switch (payload['type']) {
       case 'welcome':
         connectionState.stateType = HotlineSocketConnectionType.connected;
         break;
@@ -131,12 +142,13 @@ class Hotline {
       case 'reject_subscription':
         final callback = onConnectionRefused;
 
-        if(callback != null) {
+        if (callback != null) {
           callback();
         }
         break;
       case 'ping':
-        connectionState.lastPing = DateTime.fromMillisecondsSinceEpoch(payload['message'] * 1000);
+        connectionState.lastPing =
+            DateTime.fromMillisecondsSinceEpoch(payload['message'] * 1000);
         break;
     }
   }
@@ -144,8 +156,10 @@ class Hotline {
   void _dispatchDataMessage(Map payload) {
     // get our subscription from the subscription manager and
     // pass the payload on to it...
-    final allSubscriptions = subscriptions.getAllSubscriptions(payload['identifier']);
-    allSubscriptions.forEach((subscription) => subscription.handleResponse(payload));
+    final allSubscriptions =
+        subscriptions.getAllSubscriptions(payload['identifier']);
+    allSubscriptions
+        .forEach((subscription) => subscription.handleResponse(payload));
   }
 
   void disconnect() {

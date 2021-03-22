@@ -10,3 +10,7 @@
 
 - Fix more dart syntax
 - Added docs
+
+## 1.0.3
+
+- dartfmt formatting fixes
