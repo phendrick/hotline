@@ -93,7 +93,7 @@ class Hotline {
       this.protocols,
       this.pingInterval,
       this.onConnectionRefused}) {
-    socketChannel = IOWebSocketChannel.connect(url);
+    socketChannel = IOWebSocketChannel.connect(url, protocols: protocols, headers: headers, pingInterval: pingInterval);
     connectionState = HotlineSocketConnectionState(
         onConnect: _onConnect, onDisconnect: _onDisconnect);
     connectionState.stateType = HotlineSocketConnectionType.connecting;
