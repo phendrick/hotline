@@ -99,10 +99,10 @@ class HotlineConnectionInitialState extends HotlineConnectionState {}
 class HotlineConnectionConnecting extends HotlineConnectionState {
   late final Hotline connection;
 
-  late final Function? onConnected;
-  late final Function? onDisconnected;
+  late final Function onConnect;
+  late final Function onDisconnect;
 
-  HotlineConnectionConnecting(url, {this.onConnected, this.onDisconnected}) {
+  HotlineConnectionConnecting(url, {required this.onConnected, required this.onDisconnected}) {
     this.connection = Hotline(url,
       onConnect: this.onConnected,
       onDisconnect: this.onDisconnected
@@ -113,7 +113,10 @@ class HotlineConnectionConnecting extends HotlineConnectionState {
 
 ```dart
 // Connection succeeded
-class HotlineConnectionConnected extends HotlineConnectionState {}
+class HotlineConnectionConnected extends HotlineConnectionState {
+  final Hotline connection;
+  HotlineConnectionConnected(this.connection);
+}
 ```
 
 ### And finally, the bloc
@@ -126,10 +129,10 @@ class HotlineConnectionBloc extends Bloc<HotlineConnectionEvent, HotlineConnecti
   @override
   Stream<HotlineConnectionState> mapEventToState(HotlineConnectionEvent event) async* {
     if(event is HotlineConnectionInitialiseConnection) {
-      yield HotlineConnectionConnecting(event.url, onConnected: event.onConnected);
+      yield HotlineConnectionConnecting(event.url, onConnect: event.onConnect, onDisconnect: event.onConnect); 
     }else if(event is HotlineConnectionDidConnect) {
-      this.connection = event.connection;
-      yield HotlineConnectionConnected();
+      connection = event.connection;
+      yield HotlineConnectionConnected(connection);
     }
   }
 }
@@ -146,9 +149,12 @@ abstract class HotlineSubscriptionEvent {}
 class HotlineSubscriptionRequest extends HotlineSubscriptionEvent {
   Hotline connection;
   dynamic channel;
-  Map<String, Function>? channelCallbacks;
+  final Function onReceived;
+  final Function onConfirmed;
+  final Function? onUnsubscribed;
+  final Function? onRejected;
 
-  HotlineSubscriptionRequest(this.connection, this.channel, {this.channelCallbacks});
+  HotlineSubscriptionRequest(this.connection, this.channel, {required this.onReceived, required this.onConfirmed, this.onUnsubscribed, this.onRejected});
 }
 ```
 
@@ -180,10 +186,20 @@ class HotlineSubscriptionSubscribing extends HotlineSubscriptionState {
 
   final Hotline connection;
   final dynamic channel;
-  final Map<String, Function>? channelCallbacks;
+  
+  final Function onReceived;
+  final Function onConfirmed;
+  final Function? onUnsubscribed;
+  final Function? onRejected;
 
-  HotlineSubscriptionSubscribing(this.connection, this.channel, {this.channelCallbacks}) {
-    this.subscription = this.connection.subscriptions.create(this.channel, this.channelCallbacks);
+  HotlineSubscriptionSubscribing(this.connection, this.channel, {required this.onConfirmed, required this.onReceived, this.onUnsubscribed, this.onRejected}) {
+    this.subscription = this.connection.subscriptions.create(
+      this.channel, 
+      onConfirmed: this.onConfirmed,
+      onReceived: this.onReceived,
+      onUnsubscribed: this.onUnsubscribed,
+      onRejected: this.onRejected
+    );
   }
 }
 ```
@@ -207,7 +223,14 @@ class HotlineSubscriptionBloc extends Bloc<HotlineSubscriptionEvent, HotlineSubs
   @override
   Stream<HotlineSubscriptionState> mapEventToState(HotlineSubscriptionEvent event) async* {
     if(event is HotlineSubscriptionRequest) {
-      yield HotlineSubscriptionSubscribing(...);
+      yield HotlineSubscriptionSubscribing(
+        event.connection,
+        event.channel,
+        onReceived: event.onReceived,
+        onConfirmed: event.onConfirmed,
+        onRejected: event.onRejected,
+        onUnsubscribed: event.onUnsubscribed
+      );
     }else if(event is HotlineSubscriptionSucceeded) {
       yield HotlineSubscriptionGranted();
     }
@@ -228,16 +251,19 @@ class _HotlineConnectionViewState extends State<HotlineConnectionView> {
   @override
   void initState() {
     context.read<HotlineConnectionBloc>().add(
-      HotlineConnectionInitialiseConnection('ws://localhost:3000/cable', onConnected: _onConnected)
+      HotlineConnectionInitialiseConnection('ws://localhost:3000/cable', onConnect: _onConnected, onDisconnect: _onDisconnect)
     );
 
     super.initState();
   }
 
-  void _onConnected(Hotline connection) {
+  void _onConnect(Hotline connection) {
     context.read<HotlineConnectionBloc>().add(HotlineConnectionDidConnect(connection));
   }
-
+  
+  void _onDisconnect() {
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -293,6 +319,24 @@ class _HotlineSubscriberState extends State<HotlineSubscriber> {
   Map<String, dynamic> _json = {};
   String lastMessage = '';
 
+  @override
+  void initState() {
+    final channelIdentifier = this.widget.channel;
+
+    context.read<HotlineSubscriptionBloc>().add(
+      HotlineSubscriptionRequest(
+        context.read<HotlineConnectionBloc>().connection!, 
+        channelIdentifier, // {"channel": "Chat Room", "id": 1}
+        onReceived: _onReceived, 
+        onConfirmed: _onConfirmed, 
+        onUnsubscribed: _onUnsubscribed, 
+        onRejected: _onRejected 
+      )
+    );
+
+    super.initState();
+  }
+
   void _onConfirmed(HotlineSubscription subscription) {
     context.read<HotlineSubscriptionBloc>().add(HotlineSubscriptionSucceeded(subscription));
   }
@@ -309,24 +353,6 @@ class _HotlineSubscriberState extends State<HotlineSubscriber> {
   }
   
   void _onRejected() {
-  } 
-  
-  @override
-  void initState() {
-    final channelIdentifier = this.widget.channel;
-
-    context.read<HotlineSubscriptionBloc>().add(
-      HotlineSubscriptionRequest(
-        context.read<HotlineConnectionBloc>().connection!, 
-        channelIdentifier, 
-        onReceived: _onReceived, 
-        onConfirmed: _onConfirmed, 
-        onUnsubscribed: _onUnsubscribed, 
-        onRejected: _onRejected 
-      )
-    );
-
-    super.initState();
   }
 
   @override

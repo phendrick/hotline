@@ -14,3 +14,8 @@
 ## 1.0.3
 
 - dartfmt formatting fixes
+
+## 1.0.4
+
+- Pass headers and params onto IOWebSocketChannel constructor
+- Updated example docs
