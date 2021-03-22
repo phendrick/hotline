@@ -1,10 +1,9 @@
 import 'dart:convert';
 
-import '../hotline.dart';
-import 'hotline_subscription.dart';
+import 'package:hotline/hotline.dart';
 
 class HotlineSubscriptionManager {
-  List<HotlineSubscription> _subscriptions;
+  final List<HotlineSubscription> _subscriptions;
   Hotline connection;
 
   HotlineSubscriptionManager(this.connection) : _subscriptions = [];
@@ -15,7 +14,7 @@ class HotlineSubscriptionManager {
   HotlineSubscription create(dynamic channel, {required Function onReceived, required Function onConfirmed, Function? onUnsubscribed, Function? onRejected}) {
     final identifier = _getChannelIdentifier(channel);
 
-    HotlineSubscription subscription = HotlineSubscription(identifier, this, onReceived: onReceived, onConfirmed: onConfirmed, onRejected: onRejected, onUnsubscribed: onUnsubscribed);
+    final subscription = HotlineSubscription(identifier, this, onReceived: onReceived, onConfirmed: onConfirmed, onRejected: onRejected, onUnsubscribed: onUnsubscribed);
     _subscriptions.add(subscription);
 
     return subscription;
@@ -31,7 +30,7 @@ class HotlineSubscriptionManager {
 
   // to allow us to do `hotline.consumer.subscriptions[0] implement []
   // to proxy to the underlying _subscriptions list.
-  operator [](int i ) => _subscriptions[i];
+  HotlineSubscription operator [](int i ) => _subscriptions[i];
 
   // turn the channel identifier into an encoded string that ActionCable is
   // expecting to receive.
@@ -39,7 +38,7 @@ class HotlineSubscriptionManager {
     if (identifier is Map<String, dynamic>) {
       return jsonEncode(identifier);
     }else {
-      return jsonEncode({"channel": identifier});
+      return jsonEncode({'channel': identifier});
     }
   }
 

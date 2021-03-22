@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="generator" content="made with love by dartdoc 0.39.0">
+  <meta name="description" content="hotline API docs, for the Dart programming language.">
+  <title>hotline - Dart API docs</title>
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="static-assets/github.css">
+  <link rel="stylesheet" href="static-assets/styles.css">
+  <link rel="icon" href="static-assets/favicon.png">
+
+</head>
+
+<body data-base-href=""
+      data-using-base-href="false">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/phendrick/hotline">hotline package</a></li>
+  </ol>
+  <div class="self-name">hotline</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<main>
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <header id="header-search-sidebar" class="hidden-l">
+      <form class="search-sidebar" role="search">
+        <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+      </form>
+    </header>
+    
+    <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+      <li><a href="https://github.com/phendrick/hotline">hotline package</a></li>
+    </ol>
+    
+    <h5 class="hidden-xs"><span class="package-name">hotline</span> <span class="package-kind">package</span></h5>
+    <ol>
+          <li class="section-title">Libraries</li>
+          <li><a href="hotline/hotline-library.html">hotline</a></li>
+    </ol>
+  </div>
+
+  <div id="dartdoc-main-content" class="main-content">
+      <section class="desc markdown">
+        <h1 id="hotline">Hotline</h1>
+<p>Create connections to an ActionCable server with an ActionCable-like subscriptions API.</p>
+<h2 id="dart-example">Dart example</h2>
+<pre class="language-dart"><code class="language-dart">void main() {
+  // create a connection with the necessary callbacks 
+  final onConnect = (Hotline connection) =&gt; print('Connected');
+  final onDisconnect = () =&gt; print('Disconnected');
+  Hotline hotline = Hotline('ws://localhost:3000/cable', 
+      onConnect: onConnect, 
+      onDisconnect: onDisconnect
+  );
+
+  // Create a subscription to one of your ActionCable channels
+  final confirmed = (HotlineSubscription subscription) =&gt; print('Subscription Confirmed');
+  final received  = (Map data) =&gt; print('Received: $data');
+  final rejected  = () =&gt; print('Subscription Rejected');
+
+  // ActionCable.server.broadcast("Chat Room", {hello: "Chat room!"})
+  // `simpleChannel` onReceived callback will be called when subscribing
+  // to a simple channel name using `stream_from`
+  HotlineSubscription simpleChannel = hotline.subscriptions.create(
+    'Chat Room', 
+    onConfirmed: confirmed, 
+    onReceived: received,
+    onRejected: rejected
+  );
+
+  // If you want to broadcast to a resource-specific channel, like this:
+  // ChatRoomChannel.broadcast_to(ChatRoom.find(1), {hello: "Chat Room 1"})
+  // then use a parameterised constructor that and pass the params into your `stream_for` method 
+  HotlineSubscription resourceChannel = hotline.subscriptions.create(
+    {'channel': 'Chat Room', 'id': 1}, 
+    onConfirmed: confirmed, 
+    onReceived: received,
+    onRejected: rejected
+  );
+}
+</code></pre>
+<h2 id="flutter">Flutter</h2>
+<p>It's easy to use Hotline in a Flutter app; simply instantiate your Hotline connection in an initState, along with your channel subscriptions and then, in an <code>onReceived</code> subscription callback, call <code>updateState(...)</code></p>
+<h2 id="flutter--bloc">Flutter + Bloc</h2>
+<p>For a more comprehensive integration, it's possible to use Blocs.</p>
+<p>Create your <code>HotlineConnectionBloc</code>, <code>HotlineConnectionEvent</code> and <code>HotlineConnectionState</code> classes, something like:</p>
+<h2 id="the-connection-bloc">The connection bloc</h2>
+<h3 id="events">Events</h3>
+<pre class="language-dart"><code class="language-dart">// We need to pass parameters to some of our events, so define an abstract class to implement
+abstract class HotlineConnectionEvent {}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">// initialising a connection
+class HotlineConnectionInitialiseConnection extends HotlineConnectionEvent {
+  String url;
+  Function onConnect;
+  Function onDisconnect;
+
+  HotlineConnectionInitialiseConnection(
+    this.url, {this.onConnect, this.onDisconnect}
+  );
+}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">// successfully connected
+class HotlineConnectionDidConnect extends HotlineConnectionEvent {
+  Hotline connection;
+  HotlineConnectionDidConnect(this.connection);
+}
+</code></pre>
+<h3 id="states">States</h3>
+<pre class="language-dart"><code class="language-dart">// As with events, our States require parameterising so 
+// define an abstract class that we can sub-class
+abstract class HotlineConnectionState extends Equatable {
+  @override
+  List&lt;Object&gt; get props =&gt; [];
+}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">// Default initial state
+class HotlineConnectionInitialState extends HotlineConnectionState {}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">// Connecting state - requires the params &amp; callbacks to initialise connection
+class HotlineConnectionConnecting extends HotlineConnectionState {
+  late final Hotline connection;
+
+  late final Function? onConnected;
+  late final Function? onDisconnected;
+
+  HotlineConnectionConnecting(url, {this.onConnected, this.onDisconnected}) {
+    this.connection = Hotline(url,
+      onConnect: this.onConnected,
+      onDisconnect: this.onDisconnected
+    );
+  }
+}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">// Connection succeeded
+class HotlineConnectionConnected extends HotlineConnectionState {}
+</code></pre>
+<h3 id="and-finally-the-bloc">And finally, the bloc</h3>
+<pre class="language-dart"><code class="language-dart">class HotlineConnectionBloc extends Bloc&lt;HotlineConnectionEvent, HotlineConnectionState&gt; {
+  Hotline? connection;
+
+  HotlineConnectionBloc(HotlineConnectionState state) : super(state);
+
+  @override
+  Stream&lt;HotlineConnectionState&gt; mapEventToState(HotlineConnectionEvent event) async* {
+    if(event is HotlineConnectionInitialiseConnection) {
+      yield HotlineConnectionConnecting(event.url, onConnected: event.onConnected);
+    }else if(event is HotlineConnectionDidConnect) {
+      this.connection = event.connection;
+      yield HotlineConnectionConnected();
+    }
+  }
+}
+</code></pre>
+<h2 id="next-the-subscription-bloc">Next, the subscription bloc...</h2>
+<h3 id="events-2">Events</h3>
+<pre class="language-dart"><code class="language-dart">abstract class HotlineSubscriptionEvent {}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">class HotlineSubscriptionRequest extends HotlineSubscriptionEvent {
+  Hotline connection;
+  dynamic channel;
+  Map&lt;String, Function&gt;? channelCallbacks;
+
+  HotlineSubscriptionRequest(this.connection, this.channel, {this.channelCallbacks});
+}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">class HotlineSubscriptionSucceeded extends HotlineSubscriptionEvent {
+  HotlineSubscription subscription;
+  HotlineSubscriptionSucceeded(this.subscription);
+}
+</code></pre>
+<h3 id="states-2">States</h3>
+<pre class="language-dart"><code class="language-dart">abstract class HotlineSubscriptionState extends Equatable {
+  @override
+  List&lt;Object&gt; get props =&gt; [];
+}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">// Default initial state
+class HotlineSubscriptionInitialState extends HotlineSubscriptionState {}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">// A HotlineSubscriptionSubscribing state requires all 
+// the params to be passed to hotline.subscriptions.create(...)
+class HotlineSubscriptionSubscribing extends HotlineSubscriptionState {
+  late final HotlineSubscription subscription;
+
+  final Hotline connection;
+  final dynamic channel;
+  final Map&lt;String, Function&gt;? channelCallbacks;
+
+  HotlineSubscriptionSubscribing(this.connection, this.channel, {this.channelCallbacks}) {
+    this.subscription = this.connection.subscriptions.create(this.channel, this.channelCallbacks);
+  }
+}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">class HotlineSubscriptionGranted extends HotlineSubscriptionState {
+}
+
+class HotlineSubscriptionRejected extends HotlineSubscriptionState {
+}
+</code></pre>
+<p>And then the subscription bloc:</p>
+<pre class="language-dart"><code class="language-dart">class HotlineSubscriptionBloc extends Bloc&lt;HotlineSubscriptionEvent, HotlineSubscriptionState&gt; {
+  HotlineSubscription? subscription;
+
+  HotlineSubscriptionBloc(HotlineSubscriptionState state) : super(state);
+
+  @override
+  Stream&lt;HotlineSubscriptionState&gt; mapEventToState(HotlineSubscriptionEvent event) async* {
+    if(event is HotlineSubscriptionRequest) {
+      yield HotlineSubscriptionSubscribing(...);
+    }else if(event is HotlineSubscriptionSucceeded) {
+      yield HotlineSubscriptionGranted();
+    }
+  }
+}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">  BlocProvider(
+    create: (context) =&gt; HotlineConnectionBloc(HotlineConnectionInitialState()),
+    child: HotlineConnectionView()
+  )
+</code></pre>
+<h3 id="in-a-hotlineconnectionview-stateful-widget">In a HotlineConnectionView stateful widget...</h3>
+<pre class="language-dart"><code class="language-dart">class _HotlineConnectionViewState extends State&lt;HotlineConnectionView&gt; {
+  @override
+  void initState() {
+    context.read&lt;HotlineConnectionBloc&gt;().add(
+      HotlineConnectionInitialiseConnection('ws://localhost:3000/cable', onConnected: _onConnected)
+    );
+
+    super.initState();
+  }
+
+  void _onConnected(Hotline connection) {
+    context.read&lt;HotlineConnectionBloc&gt;().add(HotlineConnectionDidConnect(connection));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Column(
+        children: [
+          Text('HotlineConnectedView - ${context.read&lt;HotlineConnectionBloc&gt;().state}'),
+          Divider(color: Colors.black),
+
+          if(context.read&lt;HotlineConnectionBloc&gt;().state is HotlineConnectionConnected)
+          HotlineSubscriptionsView()
+        ],
+      )
+    );
+  }
+}
+</code></pre>
+<p>If the bloc state is <code>HotlineConnectionConnected</code>, we render another stateful widget: <code>HotlineSubscriptionsView</code>...</p>
+<pre class="language-dart"><code class="language-dart">class _HotlineSubscriptionsViewState extends State&lt;HotlineSubscriptionsView&gt; {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.all(10),
+      color: Colors.blue,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Text('HotlineConnection: ${context.read&lt;HotlineConnectionBloc&gt;().state}'),
+            Divider(color: Colors.black26),
+
+            BlocProvider(
+              create: (context) =&gt; HotlineSubscriptionBloc(HotlineSubscriptionInitialState()),
+              child: Container(
+                color: Colors.green,
+                child: HotlineSubscriber(channel: {"channel": "Chat Room", "id": 1})
+              )
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+</code></pre>
+<p>and finally, the <code>HotlineSubscriber</code> stateful widget...</p>
+<pre class="language-dart"><code class="language-dart">class _HotlineSubscriberState extends State&lt;HotlineSubscriber&gt; {
+  Map&lt;String, dynamic&gt; _json = {};
+  String lastMessage = '';
+
+  void _onConfirmed(HotlineSubscription subscription) {
+    context.read&lt;HotlineSubscriptionBloc&gt;().add(HotlineSubscriptionSucceeded(subscription));
+  }
+
+  void _onReceived(data) {
+    _json = (data as Map&lt;String, dynamic&gt;);
+
+    setState(() {
+      lastMessage = jsonEncode(_json['message']);
+    });
+  }
+  
+  void _onUnsubscribed() {
+  }
+  
+  void _onRejected() {
+  } 
+  
+  @override
+  void initState() {
+    final channelIdentifier = this.widget.channel;
+
+    context.read&lt;HotlineSubscriptionBloc&gt;().add(
+      HotlineSubscriptionRequest(
+        context.read&lt;HotlineConnectionBloc&gt;().connection!, 
+        channelIdentifier, 
+        onReceived: _onReceived, 
+        onConfirmed: _onConfirmed, 
+        onUnsubscribed: _onUnsubscribed, 
+        onRejected: _onRejected 
+      )
+    );
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder&lt;HotlineSubscriptionBloc, HotlineSubscriptionState&gt;(
+      builder: (BuildContext context, HotlineSubscriptionState state) {
+        return Column(
+          children: [
+            Text('channel ${this.widget.channel}'),
+            Text('${context.read&lt;HotlineSubscriptionBloc&gt;().state}: $lastMessage'),
+          ],
+        );
+      },
+    );
+  }
+}
+</code></pre>
+<h2 id="thanks">Thanks</h2>
+<p>Hotline borrows some implementation from <a href="https://pub.dev/packages/action_cable">ActionCable in Dart</a> by <a href="https://github.com/namiwang">https://github.com/namiwang</a></p>
+      </section>
+      
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="hotline">
+            <span class="name"><a href="hotline/hotline-library.html">hotline</a></span>           
+          </dt>
+          <dd>
+             
+          </dd>
+        </dl>
+      </section>
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+
+</main>
+
+<footer>
+  <span class="no-break">
+    hotline
+      1.0.0
+  </span>
+
+</footer>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="static-assets/typeahead.bundle.min.js"></script>
+<script src="static-assets/highlight.pack.js"></script>
+<script src="static-assets/script.js"></script>
+
+
+</body>
+
+</html>

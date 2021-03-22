@@ -1,7 +1,7 @@
 name: hotline
 description: An ActionCable client for Dart.
-version: 1.0.0
-homepage: https://pub.dev/packages/hotline
+version: 1.0.1
+homepage: https://github.com/phendrick/hotline
 documentation: https://github.com/phendrick/hotline
 
 environment:
