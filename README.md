@@ -99,8 +99,8 @@ class HotlineConnectionInitialState extends HotlineConnectionState {}
 class HotlineConnectionConnecting extends HotlineConnectionState {
   late final Hotline connection;
 
-  late final Function? onConnected;
-  late final Function? onDisconnected;
+  late final Function onConnect;
+  late final Function onDisconnect;
 
   HotlineConnectionConnecting(url, {this.onConnected, this.onDisconnected}) {
     this.connection = Hotline(url,
@@ -126,7 +126,7 @@ class HotlineConnectionBloc extends Bloc<HotlineConnectionEvent, HotlineConnecti
   @override
   Stream<HotlineConnectionState> mapEventToState(HotlineConnectionEvent event) async* {
     if(event is HotlineConnectionInitialiseConnection) {
-      yield HotlineConnectionConnecting(event.url, onConnected: event.onConnected);
+      yield HotlineConnectionConnecting(event.url, onConnect: event.onConnect, onDisconnect: event.onConnect); 
     }else if(event is HotlineConnectionDidConnect) {
       this.connection = event.connection;
       yield HotlineConnectionConnected();
@@ -228,16 +228,19 @@ class _HotlineConnectionViewState extends State<HotlineConnectionView> {
   @override
   void initState() {
     context.read<HotlineConnectionBloc>().add(
-      HotlineConnectionInitialiseConnection('ws://localhost:3000/cable', onConnected: _onConnected)
+      HotlineConnectionInitialiseConnection('ws://localhost:3000/cable', onConnect: _onConnected, onDisconnect: _onDisconnect)
     );
 
     super.initState();
   }
 
-  void _onConnected(Hotline connection) {
+  void _onConnect(Hotline connection) {
     context.read<HotlineConnectionBloc>().add(HotlineConnectionDidConnect(connection));
   }
-
+  
+  void _onDisconnect() {
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Container(
