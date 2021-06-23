@@ -30,7 +30,7 @@ void main() {
 
   // If you want to broadcast to a resource-specific channel, like this:
   // ChatRoomChannel.broadcast_to(ChatRoom.find(1), {hello: "Chat Room 1"})
-  // then use a parameterised constructor that and pass the params into your `stream_for` method 
+  // then use a parameterised constructor and pass the params into your `stream_for` method 
   HotlineSubscription resourceChannel = hotline.subscriptions.create(
     {'channel': 'Chat Room', 'id': 1}, 
     onConfirmed: confirmed, 
