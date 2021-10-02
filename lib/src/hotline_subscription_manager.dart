@@ -13,18 +13,25 @@ class HotlineSubscriptionManager {
   ///
   /// If using stream_for, with resource specific channels use `{'channel': 'ChannelName', 'param': 1}`
   /// alternatively if you're broadcasting via ActionCable.server.broadcast('ChannelName', {payload: ...}) and `stream_from 'ChannelName'` [channel] should be a string
-  HotlineSubscription create(dynamic channel,
-      {required Function onReceived,
-      required Function onConfirmed,
-      Function? onUnsubscribed,
-      Function? onRejected}) {
+  HotlineSubscription create(
+      dynamic channel,
+      {
+        Function? onReceived,
+        Function? onConfirmed,
+        Function? onUnsubscribed,
+        Function? onRejected
+      })
+  {
     final identifier = _getChannelIdentifier(channel);
-
-    final subscription = HotlineSubscription(identifier, this,
+    final subscription = HotlineSubscription(
+        identifier,
+        this,
         onReceived: onReceived,
         onConfirmed: onConfirmed,
         onRejected: onRejected,
-        onUnsubscribed: onUnsubscribed);
+        onUnsubscribed: onUnsubscribed
+    );
+
     _subscriptions.add(subscription);
 
     return subscription;
@@ -54,8 +61,7 @@ class HotlineSubscriptionManager {
   /// Find a subscription from the collection by looking up its identifier
   HotlineSubscription? getSubscription(String identifier) {
     try {
-      return subscriptions
-          .firstWhere((subscription) => subscription.identifier == identifier);
+      return subscriptions.firstWhere((subscription) => subscription.identifier == identifier);
     } catch (e) {
       return null;
     }
@@ -72,10 +78,19 @@ class HotlineSubscriptionManager {
 
   /// called when our `confirmed` callback is triggered by a 'confirm_subscription' event
   void confirmSubscription(String identifier) {
-    subscriptions
-        .where((subscription) => subscription.identifier == identifier)
-        .forEach((subscription) {
-      subscription.confirmed();
+    subscriptions.where((subscription) => subscription.identifier == identifier)
+        .forEach((subscription) => subscription.confirmed());
+  }
+
+  void suspendAll() {
+    subscriptions.forEach((subscription) {
+      subscription.state = HotlineSubscriptionRequestState.suspended;
+    });
+  }
+
+  void unsuspendAll() {
+    subscriptions.forEach((subscription) {
+      subscription.state = HotlineSubscriptionRequestState.granted;
     });
   }
 }

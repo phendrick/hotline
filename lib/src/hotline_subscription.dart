@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'hotline_subscription_manager.dart';
 
@@ -15,18 +16,27 @@ enum HotlineSubscriptionRequestState {
 class HotlineSubscription {
   String identifier;
   HotlineSubscriptionManager subscriptionManager;
+  HotlineSubscriptionRequestState state = HotlineSubscriptionRequestState.initial;
 
-  HotlineSubscriptionRequestState state =
-      HotlineSubscriptionRequestState.initial;
+  final StreamController<Map> _controller = StreamController<Map>();
+  final StreamController<HotlineSubscriptionRequestState> _state_controller = StreamController<HotlineSubscriptionRequestState>();
 
   /// set the state of this subscription
   set stateType(HotlineSubscriptionRequestState type) => state = type;
 
-  /// required subscription callbacks
-  Function onReceived;
-  Function onConfirmed;
+  /// this dispatch the data we receive onto the stream listeners...
+  Stream<Map> get stream async* {
+    yield* _controller.stream;
+  }
+
+  /// anything listening for updates to the subscription request...
+  Stream<HotlineSubscriptionRequestState> get status async* {
+    yield* _state_controller.stream;
+  }
 
   /// optional subscription callbacks
+  Function? onReceived;
+  Function? onConfirmed;
   Function? onUnsubscribed;
   Function? onRejected;
 
@@ -34,16 +44,10 @@ class HotlineSubscription {
 
   /// when cancelled by the subscription manager no additional work is required to remove this from the pool
   var _cancelledBySubscriptionManager = false;
-  set cancelledBySubscriptionManager(bool cancelled) =>
-      _cancelledBySubscriptionManager = cancelled;
+  set cancelledBySubscriptionManager(bool cancelled) => _cancelledBySubscriptionManager = cancelled;
 
-  HotlineSubscription(this.identifier, this.subscriptionManager,
-      {required this.onReceived,
-      required this.onConfirmed,
-      this.onUnsubscribed,
-      this.onRejected}) {
-    final subscriptionParameters =
-        jsonEncode({'identifier': identifier, 'command': 'subscribe'});
+  HotlineSubscription(this.identifier, this.subscriptionManager, {required this.onReceived, required this.onConfirmed, this.onUnsubscribed, this.onRejected}) {
+    final subscriptionParameters = jsonEncode({'identifier': identifier, 'command': 'subscribe'});
 
     /// dispatch the subscription
     _sendSubscriptionRequest(subscriptionParameters);
@@ -62,24 +66,32 @@ class HotlineSubscription {
   /// called by the Hotline connection dispatcher
   void confirmed() {
     state = HotlineSubscriptionRequestState.granted;
-    onConfirmed(this);
+
+    final callback = onConfirmed;
+
+    if(callback != null) {
+      callback(this);
+    }
+
+    _state_controller.add(state);
   }
 
   /// stop receiving messages for this channel
   void unsubscribe() {
     final callback = onUnsubscribed;
-    final unsubscribeParameters = {
+    final unsubscribeParameters = jsonEncode({
       'identifier': identifier,
       'command': 'unsubscribe'
-    };
-
-    state = HotlineSubscriptionRequestState.unsubscribed;
-    subscriptionManager.connection.socketChannel.sink
-        .add(unsubscribeParameters);
+    });
 
     /// ask the subscriptionManager to unsubscribe so that everything is cleaned up properly
     if (!_cancelledBySubscriptionManager) {
       subscriptionManager.unsubscribe(this);
+
+      subscriptionManager.connection.socketChannel.sink.add(unsubscribeParameters);
+      state = HotlineSubscriptionRequestState.unsubscribed;
+
+      _state_controller.add(state);
     } else if (callback != null) {
       callback();
     }
@@ -89,6 +101,7 @@ class HotlineSubscription {
   void rejected() {
     final callback = onRejected;
     state = HotlineSubscriptionRequestState.rejected;
+    _state_controller.add(state);
 
     if (callback != null) {
       callback();
@@ -101,7 +114,13 @@ class HotlineSubscription {
   void handleResponse(Map payload) {
     if (state == HotlineSubscriptionRequestState.suspended) return;
 
-    onReceived(payload);
+    final callback = onReceived;
+
+    if(callback != null) {
+      callback(payload);
+    }
+
+    _controller.add(payload);
   }
 
   /// send a message to a WebSocket channel on the server to its corresponding channel [action]
@@ -115,5 +134,9 @@ class HotlineSubscription {
       'command': 'message',
       'data': jsonEncode(actionParams),
     }));
+  }
+
+  void suspend() {
+    stateType = HotlineSubscriptionRequestState.suspended;
   }
 }
