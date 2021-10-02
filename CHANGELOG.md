@@ -19,3 +19,9 @@
 
 - Pass headers and params onto IOWebSocketChannel constructor
 - Updated example docs
+
+## 1.1.0
+
+- Added ability to listen to Hotline and HotlineSubscription instances as streams
+- Made all callbacks optional parameters
+- Updated docs

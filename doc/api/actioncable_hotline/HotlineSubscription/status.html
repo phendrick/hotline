@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the handleResponse method from the HotlineSubscription class, for the Dart programming language.">
-  <title>handleResponse method - HotlineSubscription class - actioncable_hotline library - Dart API</title>
+  <meta name="description" content="API docs for the status property from the HotlineSubscription class, for the Dart programming language.">
+  <title>status property - HotlineSubscription class - actioncable_hotline library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">hotline</a></li>
     <li><a href="../../actioncable_hotline/actioncable_hotline-library.html">actioncable_hotline</a></li>
     <li><a href="../../actioncable_hotline/HotlineSubscription-class.html">HotlineSubscription</a></li>
-    <li class="self-crumb">handleResponse method</li>
+    <li class="self-crumb">status property</li>
   </ol>
-  <div class="self-name">handleResponse</div>
+  <div class="self-name">status</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -53,7 +53,7 @@
   <li><a href="../../index.html">hotline</a></li>
   <li><a href="../../actioncable_hotline/actioncable_hotline-library.html">actioncable_hotline</a></li>
   <li><a href="../../actioncable_hotline/HotlineSubscription-class.html">HotlineSubscription</a></li>
-  <li class="self-crumb">handleResponse method</li>
+  <li class="self-crumb">status property</li>
 </ol>
 
 
@@ -103,40 +103,34 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">handleResponse</span> method 
+<h1><span class="kind-property">status</span> property 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
-    <section class="multi-line-signature">
-      
 
-<span class="returntype">void</span>
-<span class="name ">handleResponse</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="handleResponse-param-payload"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.13.0/dart-core/Map-class.html">Map</a></span> <span class="parameter-name">payload</span></span></li>
-</ol>)
+        
+<section id="getter">
 
-      
+<section class="multi-line-signature">
+  <span class="returntype"><a href="https://api.dart.dev/stable/2.13.0/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../actioncable_hotline/HotlineSubscriptionRequestState-class.html">HotlineSubscriptionRequestState</a></span>&gt;</span></span>
+  <span class="name ">status</span>
+  
 
-    </section>
-    
-<section class="desc markdown">
-  <p>determine how to handle this response and call the relevant handler...</p>
 </section>
 
 
-    
+<section class="desc markdown">
+  <p>anything listening for updates to the subscription request...</p>
+</section>
+
+
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">void handleResponse(Map payload) {
-  if (state == HotlineSubscriptionRequestState.suspended) return;
-
-  final callback = onReceived;
-
-  if(callback != null) {
-    callback(payload);
-  }
-
-  _controller.add(payload);
+  <pre class="language-dart"><code class="language-dart">Stream&lt;HotlineSubscriptionRequestState&gt; get status async* {
+  yield* _state_controller.stream;
 }</code></pre>
+</section>
+
 </section>
 
 

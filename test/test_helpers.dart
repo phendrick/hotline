@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:hotline/src/hotline_connection_state.dart';
 import 'package:mockito/mockito.dart';
 
 import 'package:hotline/hotline.dart';
@@ -11,11 +12,11 @@ class MockHotline extends Mock implements Hotline {
   late final HotlineSocketConnectionState connectionState;
 
   late HotlineSubscriptionManager subscriptions;
-  IOWebSocketChannel socketChannel =
-      IOWebSocketChannel.connect('ws://localhost');
+  @override
+  IOWebSocketChannel socketChannel = IOWebSocketChannel.connect('ws://localhost');
 
-  Function onConnect;
-  Function onDisconnect;
+  Function? onConnect;
+  Function? onDisconnect;
 
   MockHotline({required this.onConnect, required this.onDisconnect}) {
     subscriptions = HotlineSubscriptionManager(this);
@@ -54,12 +55,14 @@ class MockHotline extends Mock implements Hotline {
 
   void _onConnect() {
     connectionState.stateType = HotlineSocketConnectionType.connected;
-    onConnect();
+    final callback = onConnect;
+    if(callback != null) callback();
   }
 
   void _onDisconnect() {
     connectionState.stateType = HotlineSocketConnectionType.disconnected;
-    onDisconnect();
+    final callback = onDisconnect;
+    if(callback != null) callback();
   }
 
   void disconnect() {

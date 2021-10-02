@@ -1,3 +1,4 @@
+import 'package:hotline/src/hotline_connection_state.dart';
 import 'package:hotline/src/hotline_subscription.dart';
 import 'package:test/test.dart';
 import 'package:hotline/hotline.dart';
@@ -27,10 +28,12 @@ void main() {
       test('It receives a confirmation callback', () {
         expect(connection.connectionState.state,
             HotlineSocketConnectionType.connecting);
+
         connection.dispatch({
           'type': 'welcome',
           'identifier': {'channel': 'Some Channel'}
         });
+
         expect(connection.connectionState.state,
             HotlineSocketConnectionType.connected);
       });
@@ -38,11 +41,14 @@ void main() {
       test('It can be disconnected remotely', () async {
         expect(connection.connectionState.state,
             HotlineSocketConnectionType.connecting);
+
         connection.dispatch({
           'type': 'welcome',
           'identifier': {'channel': 'Some Channel'}
         });
+
         connection.dispatch({'type': 'disconnect'});
+
         expect(connection.connectionState.state,
             HotlineSocketConnectionType.disconnected);
       });
@@ -60,6 +66,7 @@ void main() {
       test('It creates a subscription', () {
         final _ = connection.subscriptions.create('Some Channel',
             onReceived: onReceivedCallback, onConfirmed: onConfirmedCallback);
+
         expect(connection.subscriptions.subscriptions.length, 1);
       });
 
@@ -69,6 +76,7 @@ void main() {
 
         expect(subscription.state == HotlineSubscriptionRequestState.granted,
             false);
+
         connection.dispatch({
           'type': 'confirm_subscription',
           'identifier': {'channel': 'Some Channel'}
@@ -80,10 +88,12 @@ void main() {
         receivedCallback = 0;
         final _ = connection.subscriptions.create('Some Channel',
             onConfirmed: onConfirmedCallback, onReceived: onReceivedCallback);
+
         connection.dispatch({
           'message': 'confirm_subscription',
           'identifier': {'channel': 'Some Channel'}
         });
+
         expect(receivedCallback, 1);
       });
 
@@ -104,12 +114,39 @@ void main() {
 
         expect(connection.subscriptions.subscriptions.length, 2);
       });
+
+      test('It doesn\t dispatch messages from suspended subscriptions', () {
+        receivedCallback = 0;
+
+        var subscription = connection.subscriptions.create('Test Channel',
+            onReceived: (Map data) {
+          receivedCallback += 1;
+          print('received data: $data - $receivedCallback');
+        }, onConfirmed: onConfirmedCallback);
+
+        expect(subscription.state == HotlineSubscriptionRequestState.granted,
+            false);
+
+        connection.dispatch({
+          'type': 'confirm_subscription',
+          'identifier': {'channel': 'Test Channel'}
+        });
+
+        expect(subscription.state, HotlineSubscriptionRequestState.granted);
+
+        subscription.suspend();
+
+        connection.dispatch({
+          'identifier': {'channel': 'Test Channel'},
+          'something': 'hello'
+        });
+
+        expect(receivedCallback, 0);
+      });
     });
 
     group('Multiple Subscriptions', () {
-      test(
-          'It allows duplicate subscriptions to receive data from a single response',
-          () {
+      test('It allows duplicate subscriptions to receive data', () {
         receivedCallback = 0;
 
         final _ = connection.subscriptions.create('Some Channel',
@@ -164,16 +201,17 @@ void main() {
         });
 
         expect(connection.subscriptions.subscriptions.length, 1);
-        expect(
-            connection.subscriptions.subscriptions.where((subscription) =>
-                subscription.state ==
-                HotlineSubscriptionRequestState.subscribing),
-            [subscription]);
+
+        expect(connection.subscriptions.subscriptions.where((subscription) {
+          return subscription.state ==
+              HotlineSubscriptionRequestState.subscribing;
+        }), [subscription]);
 
         // wait for subscription confirmation callback to fail and check that it is removed from the pool
         expect(
-            await Future.delayed(Duration(milliseconds: 550),
-                () => connection.subscriptions.subscriptions.length),
+            await Future.delayed(Duration(milliseconds: 550), () {
+              return connection.subscriptions.subscriptions.length;
+            }),
             0);
       });
 
@@ -184,6 +222,7 @@ void main() {
             onConfirmed: onConfirmedCallback,
             onReceived: onReceivedCallback,
             onRejected: () => callbackCount += 1);
+
         connection.dispatch({
           'message': 'reject_subscription',
           'identifier': {'channel': 'Some Channel'}
