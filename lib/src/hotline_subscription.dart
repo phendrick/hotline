@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 import 'hotline_subscription_manager.dart';
 
 /// The valid states for a subscription
@@ -14,6 +15,7 @@ enum HotlineSubscriptionRequestState {
 
 /// A subscription instance for handling channel-specific messages
 class HotlineSubscription {
+  String id = Uuid().v1();
   String identifier;
   HotlineSubscriptionManager subscriptionManager;
   HotlineSubscriptionRequestState state = HotlineSubscriptionRequestState.initial;
